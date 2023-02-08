@@ -32,7 +32,7 @@ public class Student {
 
     @NotNull
     @Email
-    @Column(name = "email")
+    @Column(name = "email", unique = true)
     private String email;
 
     @NotBlank
@@ -40,6 +40,26 @@ public class Student {
     private String password;
 
 }
+
+/*
+   дивись img_6
+   
+   так як тут перевіряється констреїнт unique = true у БД щодо поля email на дублікат, то при перевірці цього поля
+   нам повернеться 500 помилка якщо такий email вже існує,
+   
+   але якщо, наприклад буде помилка у полі username  => img_7
+   то ніякого попередження щодо email у нас не буде, і після того, як юзер виправить username
+   він отримає наступну помилку щодо свого email
+   
+   тож це так званий bad user experience
+   
+   
+   у цьому випадку нам потрібно зразу повідомляти про всі можливі помилки, і для цього кращим підходом
+   буде створити свій кастомний валідатор
+   
+   
+
+ */
 
 /*
 
