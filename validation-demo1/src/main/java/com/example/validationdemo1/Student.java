@@ -6,9 +6,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+
 
 @Entity
 @Table(name = "student")
@@ -21,13 +22,16 @@ public class Student {
     private Long id;
 
 
+    @NotNull // using from jakarta.validation.constraints.NotNull;
     @Column(name = "username")
     private String username;
 
+    @NotNull
     @Column(name = "email")
     private String email;
-    
+
+    @NotNull
     @Column(name = "password")
     private String password;
-    
+
 }
