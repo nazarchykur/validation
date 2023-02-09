@@ -32,7 +32,9 @@ public class Student {
 
     @NotNull
     @Email
-    @Column(name = "email", unique = true)
+    @Column(name = "email")
+//    @Column(name = "email", unique = true)
+    @UniqueEmail(message = "Email address is already registered")
     private String email;
 
     @NotBlank
