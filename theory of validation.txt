@@ -1,0 +1,263 @@
+	
+Validation in Java Applications
+	
+	Отже, код перевірки даних можна знайти скрізь — у фрагментах Javascript, контролерах Java, компонентах бізнес-логіки, 
+	сутностях моделі домену, констреїнтах бази даних. Цей код був сповнений операторів if-else, які створювали різні 
+	неперевірені винятки та ускладнювали пошук місця, де можна перевірити дані. Отже, через деякий час, коли проєкт 
+	достатньо виріс, стало досить важко і дорого підтримувати ці перевірки
+
+	код перевірки має бути:
+		1. Багаторазове використання та за принципом DRY;
+		2. Виражено чітко та природно;
+		3. Розміщується в тому місці, де очікують його побачити розробники;
+		4. Можливість перевірки даних з різних джерел даних: введення користувача, виклики SOAP або REST тощо.
+		5. Усвідомлення паралельності;
+		6. Викликається програмою неявно, без необхідності викликати перевірки вручну;
+		7. Показ зрозумілих локалізованих повідомлень користувачеві за допомогою лаконічних діалогів;
+		8. І, дотримуючись стандартів.
+
+
+	Перевірка обмежень БД
+		Можливо, найпоширеніший і простий спосіб перевірки даних використовує обмеження на рівні БД, такі як поля «not null», 
+		довжина рядка, унікальні індекси тощо. Цей спосіб є дуже природним ...
+		
+			Наприклад, якщо в специфікації написано, що номер поля паспорта має складатися з 10 цифр, швидше за все, 
+			це буде перевірено скрізь — архітектором БД у DDL, 
+			бекенд-розробником у відповідних Entity та REST і, нарешті, UI розробник у вихідному коді клієнта. 
+			
+			Пізніше ця вимога змінюється і розмір поля збільшується до 15 цифр. Технічна підтримка змінює обмеження у БД, 
+			але для користувача це нічого не означає, оскільки перевірка на стороні клієнта все одно не пройде.
+
+			Усі знають спосіб як уникнути цієї проблеми — перевірки мають бути централізованими!
+			центральною точкою такого роду перевірки є анотації JPA над сутностями. 
+			На основі цієї метаінформації ПРОГРАМА генерує правильні сценарії DDL і застосовує відповідні валідатори 
+			на стороні клієнта.
+			
+			Якщо анотації JPA змінюються, ПРОГРАМА оновлює сценарії DDL і генерує сценарії міграції, тому наступного разу, 
+			коли ви розгортаєте свій проект, нові обмеження на основі JPA будуть застосовані до інтерфейсу користувача 
+			та бази даних вашої програми.
+			
+			Таким чином, обмеження на основі JPA можуть гарантувати, що поле сутності є унікальним або обов’язковим, 
+			або можуть визначати максимальну довжину для стовпця varchar. Але це майже все.
+
+			Однак у випадках, коли потрібна складніша логіка перевірки, як-от перевірка максимальних і мінімальних 
+			значень поля, перевірка за допомогою виразу або виконання спеціальної перевірки, яка є специфічною для вашої 
+			програми, нам потрібно використовувати добре відомий підхід під назвою Bean Validation.
+
+    Перевірка Bean
+        Усе, що ми знаємо, перевірка Bean — це хороша практика для дотримання стандартів, які зазвичай мають тривалий 
+        життєвий цикл і перевірені в битвах на тисячах проектів. Перевірка Java Bean — це підхід, закладений у 
+        JSR 380, 349 і 303, а також їх реалізації: Hibernate Validator і Apache BVal.
+        
+        Використання підходу перевірки Bean приносить багато переваг вашому проекту:
+            > Логіка перевірки зосереджена біля вашої моделі домену, визначаючи значення та метод, а обмеження bean 
+                виконується природним чином, що дозволяє вивести ООП-підхід на наступний рівень.
+            > Стандарт перевірки Bean надає багато анотацій перевірки з коробки: @NotNull,  @Size, @Min, @Max, @Pattern, 
+                @Email,  @Past і менш стандартні, як-от,@URL, @Length,  @ScriptAssert...
+            > Ви не обмежені попередньо визначеними обмеженнями і можете визначати власні анотації обмежень. 
+                Ви можете створити нову анотацію, об’єднавши інші або створивши абсолютно нову та визначивши клас Java, 
+                який використовуватиметься як валідатор.
+                
+                Наприклад, дивлячись на наш попередній приклад, ми можемо визначити анотацію на рівні класу,  
+                @ValidPassportNumber щоб перевірити, чи відповідає номер паспорта правильному формату, який залежить 
+                від значення поля країни.
+            > Ви можете накласти обмеження не лише на поля та класи, а й на методи та параметри методів. 
+                Це називається «підтвердження за контрактом».
+        
+    
+    Validation by Contract
+        Іноді нам потрібно зробити ще один крок і вийти за межі перевірки стану моделі даних програми. 
+        Це може знадобитися не лише тоді, коли нам потрібно перевірити дані, що надходять до ендроіту REST або SOAP, 
+        але й коли ми хочемо виразити передумови та постумови для викликів методів => що вхідні дані було перевірено 
+        перед виконанням тіла методу, що повернуті значення знаходяться в очікуваному діапазоні, або ми хочемо 
+        декларативно виразити межі параметрів для кращої читабельності.
+        
+        
+	...
+	
+	
+	Висновок
+        Перевірка Bean (JPA 303, 349 і 980) — це підхід, який може служити конкретною основою для 95% випадків 
+        перевірки даних, які трапляються в проєкт. Великою перевагою такого підходу є те, що більша частина вашої логіки 
+        перевірки зосереджена саме в класах моделі домену. Отже, його легко знайти, легко читати та легко отримати підтримку. 
+    		 
+    	Нарешті, давайте сформулюємо емпіричне правило, щоб вибрати найкращий метод перевірки:
+        
+            > JPA validation має обмежену функціональність, але це чудовий вибір для найпростіших обмежень на класи 
+                сутностей, якщо такі обмеження можна зіставити з DDL.
+            > Bean Validation — це гнучкий, стислий, декларативний, багаторазово використовуваний і зрозумілий спосіб 
+                охопити більшість перевірок, які ви можете мати у своїх класах моделі домену. 
+                У більшості випадків це найкращий вибір, якщо вам не потрібно запускати перевірку всередині транзакції.
+            > Validation by Contract — це перевірка Bean для викликів методів. Ви можете використовувати його, коли вам 
+                потрібно перевірити вхідні та вихідні параметри методу, наприклад, в обробнику викликів REST.
+            > Entity listeners: хоча вони не такі декларативні, як анотації перевірки Bean, вони є чудовим місцем для 
+                перевірки big object's graphs або перевірки, яку потрібно виконати всередині транзакції бази даних. 
+                Наприклад, коли вам потрібно прочитати якісь дані з БД для прийняття рішення, у Hibernate є аналоги таких слухачів.
+            > Transaction listeners — це небезпечна, але найкраща зброя, яка працює в контексті транзакцій. 
+                Використовуйте його, коли вам потрібно вирішити під час виконання, які об’єкти потрібно перевірити, 
+                або коли вам потрібно перевірити різні типи ваших сутностей за тим самим алгоритмом перевірки.
+        	 
+
+
+
+========================================================================================================================
+
+	Jakarta Bean Validation (раніше відома як Java Bean Validation) дозволяє визначати перевірку даних за допомогою 
+	анотацій у ваших Java Bean. 
+	
+	Jakarta Bean Validation — це API, визначений JSR 380 . Наразі існує дві сумісні реалізації цього API: 
+	Hibernate Validator (еталонна реалізація) та Apache BVal.
+	
+	
+	Spring boot 
+	    Starter for using Java Bean Validation with Hibernate Validator
+    	    
+    	    Maven:
+                <dependency> 
+                    <groupId>org.springframework.boot</groupId> 
+                    <artifactId>spring-boot-starter-validation</artifactId> 
+                </dependency>
+                
+            or Gradle:
+            	implementation 'org.springframework.boot:spring-boot-starter-validation'
+    
+    
+	
+	org.springframework.boot:spring-boot-starter-validation
+	    org.hibernate.validator:hibernate-validator
+	    ...
+	        jakarta.validation:jakarta-validation-api
+	        ...
+	
+	
+	
+	Hibernate Validator.
+        In order to use Hibernate Validator within a Maven project, simply add the following dependency to your pom.xml:
+                <dependency>
+                   <groupId>org.hibernate.validator</groupId>
+                   <artifactId>hibernate-validator</artifactId>
+                   <version>8.0.0.Final</version>
+                </dependency>
+        
+        This transitively pulls in the dependency to the Bean Validation API (javax.validation:validation-api:).
+    
+    Unified Expression Language (EL)
+        Hibernate Validator also requires an implementation of the Unified Expression Language (JSR 341) for evaluating 
+        dynamic expressions in constraint violation messages.
+                <dependency>
+                   <groupId>org.glassfish</groupId>
+                   <artifactId>jakarta.el</artifactId>
+                   <version></version>
+                </dependency>
+            
+    CDI
+        Bean Validation defines integration points with CDI (Contexts and Dependency Injection, JSR 346). 
+        If your application runs in an environment which does not provide this integration out of the box, you may use 
+        the Hibernate Validator CDI portable extension by adding the following Maven dependency to your POM:
+        
+                <dependency>
+                   <groupId>org.hibernate.validator</groupId>
+                   <artifactId>hibernate-validator-cdi</artifactId>
+                   <version>8.0.0.Final</version>
+                </dependency>
+    
+	
+    
+    Applying constraints
+            public class Car {
+            
+               @NotNull
+               private String manufacturer;
+            
+               @NotNull
+               @Size(min = 2, max = 14)
+               private String licensePlate;
+            
+               @Min(2)
+               private int seatCount;
+            
+               public Car(String manufacturer, String licencePlate, int seatCount) {
+                  this.manufacturer = manufacturer;
+                  this.licensePlate = licencePlate;
+                  this.seatCount = seatCount;
+               }
+            
+               // getters and setters ...
+            }
+    
+    Validating constraints
+        To perform a validation of these constraints, you use a Validator instance. 
+        To demonstrate this, let’s have a look at a simple unit test:
+    
+            public class CarTest {
+            
+            private static Validator validator;
+            
+               @BeforeClass
+               public static void setUp() {
+                  ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+                  validator = factory.getValidator();
+               }
+            
+               @Test
+               public void manufacturerIsNull() {
+                  Car car = new Car(null, "DD-AB-123", 4);
+            
+                  Set<ConstraintViolation<Car>> constraintViolations = validator.validate(car);
+            
+                  assertEquals(1, constraintViolations.size());
+                  assertEquals("may not be null", constraintViolations.iterator().next().getMessage());
+               }
+            
+               @Test
+               public void licensePlateTooShort() {
+                  Car car = new Car("Morris", "D", 4);
+            
+                  Set<ConstraintViolation<Car>> constraintViolations = validator.validate(car);
+            
+                  assertEquals(1, constraintViolations.size());
+                  assertEquals("size must be between 2 and 14", constraintViolations.iterator().next().getMessage());
+               }
+            
+               @Test
+               public void seatCountTooLow() {
+                  Car car = new Car("Morris", "DD-AB-123", 1);
+            
+                  Set<ConstraintViolation<Car>> constraintViolations = validator.validate(car);
+            
+                  assertEquals(1, constraintViolations.size());
+                  assertEquals("must be greater than or equal to 2", constraintViolations.iterator().next().getMessage());
+               }
+            
+               @Test
+               public void carIsValid() {
+                  Car car = new Car("Morris", "DD-AB-123", 2);
+            
+                  Set<ConstraintViolation<Car>> constraintViolations = validator.validate(car);
+            
+                  assertEquals(0, constraintViolations.size());
+               }
+            }
+
+    
+    
+    
+    
+    
+    
+    When Spring Boot finds an argument annotated with @Valid, it automatically bootstraps the default JSR 380 
+    implementation — Hibernate Validator — and validates the argument.
+    
+    When the target argument fails to pass the validation, Spring Boot throws a MethodArgumentNotValidException exception.
+    
+    
+    
+    
+    The @Valid annotation ensures the validation of the whole object. Importantly, it performs the validation of the 
+    whole object graph. However, this creates issues for scenarios needing only partial validation.
+    
+    On the other hand, we can use @Validated for group validation, including the above partial validation. 
+    However, in this instance, the validated entities have to know the validation rules for all the groups or use-cases 
+    they're used in. Here we're mixing concerns, which can result in an anti-pattern.
+    
+    
